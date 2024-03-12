@@ -3,9 +3,9 @@
 #
 
 # hypervisor commit
-KERNEL_GIT_URL="https://github.com/confidential-containers/linux.git"
-KERNEL_HOST_BRANCH="amd-snp-host-202402240000"
-KERNEL_GUEST_BRANCH="amd-snp-guest-202402240000"
+KERNEL_GIT_URL="https://github.com/blossomin/linux.git"
+KERNEL_HOST_BRANCH="amd-snp-host-tarfs"
+KERNEL_GUEST_BRANCH="amd-snp-guest-tarfs"
 
 # qemu commit
 QEMU_GIT_URL="https://github.com/confidential-containers/qemu.git"
