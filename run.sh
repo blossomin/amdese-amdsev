@@ -8,5 +8,4 @@ run2204() {
   docker run --init --rm -v $PWD/.ccache:/root/.ccache -v $PWD:$PWD -w $PWD amdsev-build:22.04 "$@"
 }
 
-run2204 ./build.sh --package kernel host
-run2204 ./build.sh qemu
+run2204 ./build.sh --package qemu kernel host
