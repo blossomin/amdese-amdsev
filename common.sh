@@ -117,6 +117,9 @@ build_kernel()
 			run_cmd ./scripts/config --enable MLXSW_SPECTRUM_DCB
 			run_cmd ./scripts/config --module MLXSW_MINIMAL
 			run_cmd ./scripts/config --module MLXFW
+            run_cmd ./scripts/config --enable DM_INTEGRITY
+            run_cmd ./scripts/config --enable DM_VERITY
+            run_cmd ./scripts/config --enable DM_CRYPT
 
 			run_cmd echo $COMMIT >../../source-commit.kernel.$V
 		popd >/dev/null
@@ -150,10 +153,7 @@ build_install_ovmf()
 		GCCVERS="GCC5"
 	fi
 
-	# A race condition exists in edk2 build - set threads to 1 for now
-	# Previous value: -n $(getconf _NPROCESSORS_ONLN)
-	# Only seen the error on Bergamo systems
-	BUILD_CMD="nice build -q --cmd-len=64436 -DDEBUG_ON_SERIAL_PORT=TRUE -n 1 ${GCCVERS:+-t $GCCVERS} -a X64 -p OvmfPkg/AmdSev/AmdSevX64.dsc"
+	BUILD_CMD="nice build -q --cmd-len=64436 -DDEBUG_ON_SERIAL_PORT=TRUE -n 32  ${GCCVERS:+-t $GCCVERS} -a X64 -p OvmfPkg/AmdSev/AmdSevX64.dsc"
 
 	# initialize git repo, or update existing remote to currently configured one
 	if [ -d ovmf ]; then
@@ -173,7 +173,7 @@ build_install_ovmf()
 
 	pushd ovmf >/dev/null
 		run_cmd git fetch current
-		run_cmd git checkout ${OVMF_BRANCH}
+		run_cmd git checkout current/${OVMF_BRANCH}
 		run_cmd git submodule update --init --recursive
 		run_cmd make -C BaseTools
 		. ./edksetup.sh --reconfig
@@ -181,8 +181,10 @@ build_install_ovmf()
 		run_cmd $BUILD_CMD
 
 		mkdir -p $DEST
-		run_cmd cp -f Build/AmdSev/DEBUG_$GCCVERS/FV/OVMF.fd $DEST
-
+		#un_cmd cp -f Build/OvmfX64/DEBUG_$GCCVERS/FV/OVMF_CODE.fd $DEST
+		#un_cmd cp -f Build/OvmfX64/DEBUG_$GCCVERS/FV/OVMF_VARS.fd $DEST
+        run_cmd cp -f Build/AmdSev/DEBUG_$GCCVERS/FV/OVMF.fd $DEST
+        
 		COMMIT=$(git log --format="%h" -1 HEAD)
 		run_cmd echo $COMMIT >../source-commit.ovmf
 	popd >/dev/null
@@ -212,7 +214,7 @@ build_install_qemu()
 
 	pushd qemu >/dev/null
 		run_cmd git fetch current
-		run_cmd git checkout ${QEMU_BRANCH}
+		run_cmd git checkout current/${QEMU_BRANCH}
 		run_cmd ./configure --target-list=x86_64-softmmu --prefix=$DEST
 		run_cmd $MAKE
 		run_cmd $MAKE install
