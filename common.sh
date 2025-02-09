@@ -66,20 +66,34 @@ build_kernel()
 			run_cmd git checkout "${BRANCH}"
 			COMMIT=$(git log --format="%h" -1 HEAD)
 
-			run_cmd "cp /boot/config-$(uname -r) .config"
+            if [ "${V}" = "guest" ]; then
+				make x86_64_defconfig
+				make kvm_guest.config
+				run_cmd ./scripts/config --enable AMD_MEM_ENCRYPT
+				run_cmd ./scripts/config --enable CRYPTO
+				run_cmd ./scripts/config --enable VIRT_DRIVERS
+				run_cmd ./scripts/config --enable SEV_GUEST
+				run_cmd ./scripts/config --enable DEBUG_SPINLOCK
+				run_cmd ./scripts/config --set-val RCU_CPU_STALL_TIMEOUT 15
+			else
+				run_cmd "cp /boot/config-$(uname -r) .config"
+				run_cmd ./scripts/config --module  SEV_GUEST
+				# run_cmd ./scripts/config --enable HYPERV_PSP
+			fi
+			# run_cmd "cp /boot/config-$(uname -r) .config"
 			run_cmd ./scripts/config --set-str LOCALVERSION "$VER-$COMMIT"
 			run_cmd ./scripts/config --disable LOCALVERSION_AUTO
 			run_cmd ./scripts/config --enable  EXPERT
 			run_cmd ./scripts/config --enable  DEBUG_INFO
 			run_cmd ./scripts/config --enable  DEBUG_INFO_REDUCED
-			run_cmd ./scripts/config --enable  AMD_MEM_ENCRYPT
+			# run_cmd ./scripts/config --enable  AMD_MEM_ENCRYPT
 			run_cmd ./scripts/config --disable AMD_MEM_ENCRYPT_ACTIVE_BY_DEFAULT
 			run_cmd ./scripts/config --enable  KVM_AMD_SEV
 			run_cmd ./scripts/config --module  CRYPTO_DEV_CCP_DD
 			run_cmd ./scripts/config --disable SYSTEM_TRUSTED_KEYS
 			run_cmd ./scripts/config --disable SYSTEM_REVOCATION_KEYS
 			run_cmd ./scripts/config --disable MODULE_SIG_KEY
-			run_cmd ./scripts/config --module  SEV_GUEST
+			# run_cmd ./scripts/config --module  SEV_GUEST
 			run_cmd ./scripts/config --disable IOMMU_DEFAULT_PASSTHROUGH
 			run_cmd ./scripts/config --disable PREEMPT_COUNT
 			run_cmd ./scripts/config --disable PREEMPTION
@@ -153,7 +167,7 @@ build_install_ovmf()
 		GCCVERS="GCC5"
 	fi
 
-	BUILD_CMD="nice build -q --cmd-len=64436 -DDEBUG_ON_SERIAL_PORT=TRUE -n 32  ${GCCVERS:+-t $GCCVERS} -a X64 -p OvmfPkg/AmdSev/AmdSevX64.dsc"
+	BUILD_CMD="nice build -q --cmd-len=64436 -DDEBUG_ON_SERIAL_PORT=TRUE -n 32 ${GCCVERS:+-t $GCCVERS} -a X64 -p OvmfPkg/AmdSev/AmdSevX64.dsc"
 
 	# initialize git repo, or update existing remote to currently configured one
 	if [ -d ovmf ]; then
